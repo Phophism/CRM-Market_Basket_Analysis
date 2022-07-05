@@ -1,0 +1,84 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+ 
+```{r}
+# install.packages("arules")
+ 
+library(arules)
+```
+
+```{r} 
+large <- read.csv('large.csv')
+large
+```
+
+```{r}
+
+large <- as(split(large[,"Description"], large[,"InvoiceNo"]), "transactions")
+# inspect(large)
+```
+ 
+```{r}
+summary(large)
+```
+
+ 
+```{r}
+inspect(head(large))
+```
+ 
+```{r}
+str(large)
+```
+ 
+```{r}
+itemFrequency(large[,0:5])
+```
+ 
+```{r}
+itemFrequencyPlot(large,support=0.05)
+```
+ 
+```{r}
+itemFrequencyPlot(large, topN=10)
+```
+ 
+```{r}
+image(large[1:100])
+```
+ 
+```{r}
+# assume there are averagely 30 transaction per day
+# support = 30/9835
+rule <- apriori(large,parameter = list(support=0.02,confidence=0.3,minlen=2))
+rule
+```
+
+```{r}
+summary(rule)
+```
+
+```{r}
+inspect(rule[1:5])
+```
+ 
+```{r}
+ inspect(sort(rule,by="lift")[1:57])
+```
+
+```{r}
+beauty_rule <- subset(rule, items %in% "FLOWER DESIGN BIG MUG")
+inspect(sort(beauty_rule,by="lift"))
+```
+```{r}
+write(rule, file="rules.csv",sep ="," , quote=TRUE,row.names=FALSE)
+```
+ 
+```{r}
+rule_df <- as(rule,"data.frame")
+rule_df
+```
+ 
+ 

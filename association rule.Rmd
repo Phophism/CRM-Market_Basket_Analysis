@@ -1,0 +1,115 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+ 
+```{r}
+# install.packages("arules")
+# install.packages("rCBA")
+# install.packages("sparklyr")
+
+library(rCBA)
+library(arules)
+library(sparklyr)
+```
+
+```{r} 
+data(Groceries)
+class(Groceries)
+```
+ 
+```{r}
+summary(Groceries)
+```
+
+ 
+```{r}
+inspect(head(Groceries))
+```
+ 
+```{r}
+str(Groceries)
+```
+ 
+```{r}
+itemFrequency(Groceries[,0:5])
+```
+ 
+```{r}
+itemFrequencyPlot(Groceries,support=0.1)
+```
+ 
+```{r}
+itemFrequencyPlot(Groceries, topN=10)
+```
+ 
+```{r}
+image(Groceries[1:100])
+```
+ 
+```{r}
+# assume there are averagely 30 transaction per day
+# support = 30/9835
+rule <- apriori(Groceries,parameter = list(support=0.003,confidence=0.25,minlen=2))
+rule
+```
+```{r}
+train <- sapply(Groceries,as.factor)
+train <- data.frame(train, check.names=FALSE)
+txns <- as(train,"items")
+rules = rCBA::fpgrowth(txns, support=0.03, confidence=0.03, maxLength=1, consequent="items", parallel=FALSE)
+inspect(rules)
+```
+
+
+```{r}
+fp_rule <- rCBA::fpgrowth(txns, support = 0.06, confidence = 0.3, maxLength = 5,consequent="items")
+```
+
+```{r}
+summary(rule)
+```
+
+```{r}
+inspect(rule[1:5])
+```
+ 
+```{r}
+ inspect(sort(rule,by="lift")[1:5])
+```
+
+```{r}
+beef_rule <- subset(rule, items %in% "beef")
+inspect(sort(beef_rule,by="lift")[1:10])
+```
+```{r}
+write(rule, file="rules.csv",sep ="," , quote=TRUE,row.names=FALSE)
+```
+ 
+```{r}
+rule_df <- as(rule,"data.frame")
+rule_df
+```
+ 
+```{r}
+library("rCBA")
+data("iris")
+
+train <- sapply(iris,as.factor)
+train <- data.frame(train, check.names=FALSE)
+txns <- as(train,"transactions")
+
+rules = rCBA::fpgrowth(txns, support=0.03, confidence=0.03, maxLength=2, consequent="Species",
+           parallel=FALSE)
+
+predictions <- rCBA::classification(train,rules)
+table(predictions)
+sum(as.character(train$Species)==as.character(predictions),na.rm=TRUE)/length(predictions)
+
+prunedRules <- rCBA::pruning(train, rules, method="m2cba", parallel=FALSE)
+predictions <- rCBA::classification(train, prunedRules)
+table(predictions)
+sum(as.character(train$Species)==as.character(predictions),na.rm=TRUE)/length(predictions)
+```
+ 
+ 
